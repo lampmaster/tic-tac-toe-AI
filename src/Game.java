@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -154,23 +156,18 @@ public class Game {
         Move bestMove = null;
         int bestScore = Integer.MIN_VALUE;
 
-        for (int position = 1; position <= board.length * board.length; position++) {
-            int row = (position - 1) / board.length;
-            int col = (position - 1) % board.length;
+        List<Move> availableMoves = getAvailableMoves(board);
 
-            if (board[row][col].equals("X") || board[row][col].equals("O")) {
-                continue;
-            }
+        for (Move move : availableMoves) {
+            board[move.row][move.col] = robot;
+            int score = minimax(board, move, robot);
 
-            board[row][col] = robot;
-            int score = minimax(board, new Move(row, col), robot);
-
-            String emptyCell = String.valueOf(position);
-            board[row][col] = emptyCell;
+            String emptyCell = String.valueOf(move.row * 3 + move.col + 1);
+            board[move.row][move.col] = emptyCell;
 
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = new Move(row, col);
+                bestMove = move;
             }
         }
 
@@ -189,8 +186,8 @@ public class Game {
         }
     }
 
-    private Integer minimax(String[][] possibleGame, Move move, String player) {
-        GameStatus status = checkGameStatus(move.row, move.col, player);
+    private Integer minimax(String[][] possibleGame, Move currentMove, String player) {
+        GameStatus status = checkGameStatus(currentMove.row, currentMove.col, player);
         if (status != GameStatus.IN_PROGRESS) {
             return score(status);
         }
@@ -198,17 +195,15 @@ public class Game {
         String nextPlayer = Objects.equals(player, robot) ? human : robot;
         int bestScore = Objects.equals(nextPlayer, robot) ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-        for (int i = 1; i <= possibleGame.length * possibleGame.length; i++) {
-            int row = (i - 1) / possibleGame.length;
-            int col = (i - 1) % possibleGame.length;
+        List<Move> availableMoves = getAvailableMoves(possibleGame);
 
-            if (possibleGame[row][col].equals("X") || possibleGame[row][col].equals("O")) {
-                continue;
-            }
+        for (Move moveItem : availableMoves) {
+            int row = moveItem.row;
+            int col = moveItem.col;
 
             possibleGame[row][col] = nextPlayer;
-            int currentScore = minimax(possibleGame, new Move(row, col), nextPlayer);
-            String emptyCell = String.valueOf(i);
+            int currentScore = minimax(possibleGame, moveItem, nextPlayer);
+            String emptyCell = String.valueOf(row * 3 + col + 1);
             possibleGame[row][col] = emptyCell;
 
             if (Objects.equals(nextPlayer, robot)) {
@@ -221,6 +216,20 @@ public class Game {
         return bestScore;
     }
 
+    private List<Move> getAvailableMoves(String[][] board) {
+        List<Move> availableMoves = new ArrayList<>();
+
+        for (int i = 1; i <= board.length * board.length; i++) {
+            int row = (i - 1) / board.length;
+            int col = (i - 1) % board.length;
+
+            if (!board[row][col].equals("X") && !board[row][col].equals("O")) {
+                availableMoves.add(new Move(row, col));
+            }
+
+        }
+        return availableMoves;
+    }
     private Integer score(GameStatus currentStatus) {
         if (currentStatus == GameStatus.HUMAN_WIN) {
             return -1;
